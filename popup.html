@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Authenticity Detector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 400px;
+            min-height: 500px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .upload-box {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            background: #f7f7ff;
+            border-color: #764ba2;
+        }
+
+        .upload-box p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .preview-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .result-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .authentic {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .tampered {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .confidence {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .probabilities {
+            margin-bottom: 15px;
+        }
+
+        .prob-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .prob-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .prob-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+
+        .heatmap-section {
+            margin-top: 20px;
+        }
+
+        .heatmap-section h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .heatmap-image {
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid #f8d7da;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Image Authenticity Detector</h1>
+        
+        <div class="upload-section">
+            <div class="upload-box" id="uploadBox">
+                <p>📁 Click to upload an image</p>
+                <p style="font-size: 12px; color: #999;">or right-click on any image and select "Check Image Authenticity"</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="btn" id="analyzeBtn" style="display: none;">Analyze Image</button>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <img id="imagePreview" class="image-preview" alt="Image preview">
+        </div>
+
+        <div id="loadingSection" style="display: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing image...</p>
+            </div>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div id="resultBadge" class="result-badge"></div>
+            <div class="confidence">
+                <strong>Confidence:</strong> <span id="confidenceValue"></span>
+            </div>
+            
+            <div class="probabilities">
+                <div class="prob-item">
+                    <span>Real Image</span>
+                    <span id="realProb"></span>
+                </div>
+                <div class="prob-bar">
+                    <div class="prob-fill" id="realBar"></div>
+                </div>
+                
+                <div class="prob-item" style="margin-top: 10px;">
+                    <span>Tampered</span>
+                    <span id="fakeProb"></span>
+                </div>
+                <div class="prob-bar">
+                    <div class="prob-fill" id="fakeBar"></div>
+                </div>
+            </div>
+
+            <div class="heatmap-section" id="heatmapSection" style="display: none;">
+                <h3>⚠️ Tampered Regions (Heatmap)</h3>
+                <img id="heatmapImage" class="heatmap-image" alt="Heatmap">
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
